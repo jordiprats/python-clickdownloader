@@ -5,6 +5,7 @@ from __future__ import print_function
 download albums
 """
 
+import re
 import os
 import sys
 import argparse
@@ -60,14 +61,35 @@ if __name__ == '__main__':
     }
 
     session = requests.Session()
-    login_url_response = session.post(base_url+ogin_url, data=data_login)
+    login_url_response = session.post(base_url+login_url, data=data_login)
 
     if debug:
         print("login_url response code: " + str(login_url_response.status_code))
-        print("login_url response text: " + str(login_url_response.text))
+        # print("login_url response text: " + str(login_url_response.text))
 
-    index_url_response = session.get(base_url+index_url)
+    numero_pagina=1
+    llistat_albums=[]
+    anterior_numero_albums=9999
 
-    if debug:
-        print("index_url response code: " + str(index_url_response.status_code))
-        print("index_url response text: " + str(index_url_response.text))
+    # obtindre llistat tots els albums
+    while(anterior_numero_albums!=len(llistat_albums)):
+
+        anterior_numero_albums = len(llistat_albums)
+
+        # ?accio=llistar&pag=2&lloc=fotos
+        index_url_response = session.get(base_url+index_url+'?accio=llistar&pag='+str(numero_pagina)+'&lloc=fotos')
+
+        if debug:
+            print("URL: "+base_url+index_url+'?accio=llistar&pag='+str(numero_pagina)+'&lloc=fotos')
+            print("index_url response code: " + str(index_url_response.status_code))
+            # print("index_url response text: " + str(index_url_response.text))
+
+        pattern_url_albums = re.compile(r'<a href="([^>]*albums_fotos.php[^>]*veure[^>]*)">')
+
+        current_list_albums = []
+        for album_url in re.findall(pattern_url_albums, str(index_url_response.text)):
+            if debug:
+                current_list_albums.append(album_url)
+
+        llistat_albums = llistat_albums + list(set(current_list_albums) - set(llistat_albums))
+        numero_pagina=numero_pagina+1
