@@ -12,8 +12,37 @@ import argparse
 import requests
 from configparser import SafeConfigParser
 
+debug = False
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+def getAlbum(session, base_url, album_id):
+    global debug
+    # /students/albums_fotos.php?accio=veure&id=1441
+    album_response = session.get(base_url+'/students/albums_fotos.php?accio=veure&id='+album_id)
+    if debug:
+        print("album response code: " + str(album_response.status_code))
+        # print("album response text: " + str(album_response.text))
+
+    # <div><h2 class="Gran head_news_interior"><strong>...</strong></h2></div>
+    pattern_get_nom_album = re.compile(r'<div><h2 class="Gran head_news_interior"><strong>([^<]*)<')
+    titol_album = re.findall(pattern_get_nom_album, str(album_response.text))[0]
+    # if debug:
+    #     print("nom album: "+titol_album)
+
+    # <a class="boto_vermell_petit" href="...zip">Descarregar àlbum</a>
+    pattern_get_url_download = re.compile(r'<a class="boto_vermell_petit" href="([^"]*)">')
+    try:
+        album_url_download = re.findall(pattern_get_url_download, str(album_response.text))[0]
+    except:
+        album_url_download = ''
+
+    # if debug:
+    #     print("URL DOWNLOAD: "+album_url_download)
+
+    if debug:
+        print("nom album: "+titol_album +" URL DOWNLOAD: "+album_url_download)
 
 if __name__ == '__main__':
 
@@ -55,6 +84,11 @@ if __name__ == '__main__':
     except:
         debug = False
 
+    try:
+        once = config.getboolean('clickdownloader', 'once')
+    except:
+        once = False
+
     data_login = {
                     'username': username,
                     'password': password
@@ -93,3 +127,13 @@ if __name__ == '__main__':
 
         llistat_albums = llistat_albums + list(set(current_list_albums) - set(llistat_albums))
         numero_pagina=numero_pagina+1
+
+        if once:
+            break
+
+    # albums_fotos.php?accio=veure&id=1434
+    pattern_get_id_albums = re.compile(r'id=([0-9]*)')
+
+    for album_url in llistat_albums:
+        album_id = re.findall(pattern_get_id_albums, album_url)[0]
+        getAlbum(session, base_url, album_id)
