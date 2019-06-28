@@ -17,7 +17,7 @@ debug = False
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-def download_file(local_filename, url):
+def download_file_by_url(local_filename, url):
     # NOTE the stream=True parameter below
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
@@ -29,7 +29,7 @@ def download_file(local_filename, url):
     return local_filename
 
 def getAlbum(session, base_url, album_id):
-    global debug
+    global debug, base_downloads
     # /students/albums_fotos.php?accio=veure&id=1441
     album_response = session.get(base_url+'/students/albums_fotos.php?accio=veure&id='+album_id)
     if debug:
@@ -57,7 +57,9 @@ def getAlbum(session, base_url, album_id):
 
     filename = album_url_download.split('/')[-1]
 
-    # TODO: actual download
+    # actual download
+    if not os.path.isfile(fname):
+        download_file_by_url(base_downloads+'/'+filename, album_url_download)
 
 if __name__ == '__main__':
 
@@ -103,6 +105,11 @@ if __name__ == '__main__':
         once = config.getboolean('clickdownloader', 'once')
     except:
         once = False
+
+    try:
+        base_downloads = config.get('clickdownloader', 'basedownloads')
+    except:
+        base_downloads = '.'
 
     data_login = {
                     'username': username,
