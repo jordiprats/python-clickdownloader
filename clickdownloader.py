@@ -59,8 +59,8 @@ def getAlbum(session, base_url, album_id):
     filename = album_url_download.split('/')[-1]
 
     # actual download
-    if album_url_download and not os.path.isfile(base_downloads+'/'+filename):
-        download_file_by_url(base_downloads+'/'+filename, album_url_download)
+    if album_url_download and not os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
+        download_file_by_url(base_downloads+'/'+titol_album+'.zip', album_url_download)
 
 if __name__ == '__main__':
 
