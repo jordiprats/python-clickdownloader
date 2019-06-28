@@ -55,6 +55,7 @@ def getAlbum(session, base_url, album_id):
     if debug:
         eprint("nom album: "+titol_album +" URL DOWNLOAD: "+album_url_download)
 
+    # TODO: friendlier name
     filename = album_url_download.split('/')[-1]
 
     # actual download
