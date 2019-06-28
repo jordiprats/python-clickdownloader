@@ -45,7 +45,7 @@ def getAlbum(session, base_url, album_id):
     # <a class="boto_vermell_petit" href="...zip">Descarregar àlbum</a>
     pattern_get_url_download = re.compile(r'<a class="boto_vermell_petit" href="([^"]*)">')
     try:
-        album_url_download = base_downloads+'/students/'+re.findall(pattern_get_url_download, str(album_response.text))[0]
+        album_url_download = base_url+'/students/'+re.findall(pattern_get_url_download, str(album_response.text))[0]
     except:
         album_url_download = ''
 
