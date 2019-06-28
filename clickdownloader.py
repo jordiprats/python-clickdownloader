@@ -17,8 +17,7 @@ debug = False
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-def download_file(url):
-    local_filename = url.split('/')[-1]
+def download_file(local_filename, url):
     # NOTE the stream=True parameter below
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
@@ -55,6 +54,8 @@ def getAlbum(session, base_url, album_id):
 
     if debug:
         eprint("nom album: "+titol_album +" URL DOWNLOAD: "+album_url_download)
+
+    filename = album_url_download.split('/')[-1]
 
 if __name__ == '__main__':
 
