@@ -159,3 +159,6 @@ if __name__ == '__main__':
     for album_url in llistat_albums:
         album_id = re.findall(pattern_get_id_albums, album_url)[0]
         getAlbum(session, base_url, album_id)
+
+        # keepalive
+        index_url_response = session.get(base_url+index_url+'?accio=llistar&pag=1&lloc=fotos')
