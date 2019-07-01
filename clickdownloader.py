@@ -8,6 +8,7 @@ download albums
 import re
 import os
 import sys
+import getopt
 import argparse
 import requests
 from configparser import SafeConfigParser
@@ -29,7 +30,7 @@ def download_file_by_url(local_filename, url):
     return local_filename
 
 def getAlbum(session, base_url, album_id):
-    global debug, base_downloads, list
+    global debug, base_downloads, list_option
     # /students/albums_fotos.php?accio=veure&id=1441
     album_response = session.get(base_url+'/students/albums_fotos.php?accio=veure&id='+album_id)
     if debug:
@@ -58,7 +59,7 @@ def getAlbum(session, base_url, album_id):
     # TODO: friendlier name
     filename = album_url_download.split('/')[-1]
 
-    if list:
+    if list_option:
         if os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
             print("ALREADY DOWNLOADED: "+ base_downloads+'/'+titol_album+'.zip')
         else:
@@ -75,120 +76,119 @@ def showJelp(msg):
     sys.exit(msg)
 
 if __name__ == '__main__':
+    list_option = False
+    config_file = './clickdownloader.config'
 
-list = False
-config_file = './clickdownloader.config'
-
-# parse opts
-try:
-    options, remainder = getopt.getopt(sys.argv[1:], 'hlc:', [
-                                                                'help'
-                                                                'list',
-                                                                'config=',
-                                                             ])
-except Exception, e:
-    showJelp(str(e))
-
-
-for opt, arg in options:
-    if opt in ('-l', '--list'):
-        list = True
-    elif opt in ('-c', '--config'):
-        config_file = arg
-    else:
-        showJelp("unknow option")
-
-    config = SafeConfigParser()
-    config.read(config_file)
-
+    # parse opts
     try:
-        base_url = config.get('clickdownloader', 'baseurl').strip('"').strip()
-    except:
-        sys.exit("ERROR: baseurl is mandatory")
+        options, remainder = getopt.getopt(sys.argv[1:], 'hlc:', [
+                                                                    'help'
+                                                                    'list',
+                                                                    'config=',
+                                                                 ])
+    except Exception as e:
+        showJelp(str(e))
 
-    try:
-        login_url = config.get('clickdownloader', 'loginurl').strip('"').strip()
-    except:
-        sys.exit("ERROR: loginurl is mandatory")
 
-    try:
-        username = config.get('clickdownloader', 'username').strip('"').strip()
-    except:
-        sys.exit("ERROR: username is mandatory")
+    for opt, arg in options:
+        if opt in ('-l', '--list'):
+            list_option = True
+        elif opt in ('-c', '--config'):
+            config_file = arg
+        else:
+            showJelp("unknow option")
 
-    try:
-        password = config.get('clickdownloader', 'password').strip('"').strip()
-    except:
-        sys.exit("ERROR: password is mandatory")
+        config = SafeConfigParser()
+        config.read(config_file)
 
-    try:
-        index_url = config.get('clickdownloader', 'indexurl').strip('"').strip()
-    except:
-        sys.exit("ERROR: indexurl is mandatory")
+        try:
+            base_url = config.get('clickdownloader', 'baseurl').strip('"').strip()
+        except:
+            sys.exit("ERROR: baseurl is mandatory")
 
-    try:
-        debug = config.getboolean('clickdownloader', 'debug')
-    except:
-        debug = False
+        try:
+            login_url = config.get('clickdownloader', 'loginurl').strip('"').strip()
+        except:
+            sys.exit("ERROR: loginurl is mandatory")
 
-    try:
-        once = config.getboolean('clickdownloader', 'once')
-    except:
-        once = False
+        try:
+            username = config.get('clickdownloader', 'username').strip('"').strip()
+        except:
+            sys.exit("ERROR: username is mandatory")
 
-    try:
-        base_downloads = config.get('clickdownloader', 'basedownloads')
-    except:
-        base_downloads = '.'
+        try:
+            password = config.get('clickdownloader', 'password').strip('"').strip()
+        except:
+            sys.exit("ERROR: password is mandatory")
 
-    data_login = {
-                    'username': username,
-                    'password': password
-    }
+        try:
+            index_url = config.get('clickdownloader', 'indexurl').strip('"').strip()
+        except:
+            sys.exit("ERROR: indexurl is mandatory")
 
-    session = requests.Session()
-    login_url_response = session.post(base_url+login_url, data=data_login)
+        try:
+            debug = config.getboolean('clickdownloader', 'debug')
+        except:
+            debug = False
 
-    if debug:
-        eprint("login_url response code: " + str(login_url_response.status_code))
-        # eprint("login_url response text: " + str(login_url_response.text))
+        try:
+            once = config.getboolean('clickdownloader', 'once')
+        except:
+            once = False
 
-    numero_pagina=1
-    llistat_albums=[]
-    anterior_numero_albums=9999
+        try:
+            base_downloads = config.get('clickdownloader', 'basedownloads')
+        except:
+            base_downloads = '.'
 
-    # obtindre llistat tots els albums
-    while(anterior_numero_albums!=len(llistat_albums)):
+        data_login = {
+                        'username': username,
+                        'password': password
+        }
 
-        anterior_numero_albums = len(llistat_albums)
-
-        # ?accio=llistar&pag=2&lloc=fotos
-        index_url_response = session.get(base_url+index_url+'?accio=llistar&pag='+str(numero_pagina)+'&lloc=fotos')
+        session = requests.Session()
+        login_url_response = session.post(base_url+login_url, data=data_login)
 
         if debug:
-            eprint("URL: "+base_url+index_url+'?accio=llistar&pag='+str(numero_pagina)+'&lloc=fotos')
-            eprint("index_url response code: " + str(index_url_response.status_code))
-            # eprint("index_url response text: " + str(index_url_response.text))
+            eprint("login_url response code: " + str(login_url_response.status_code))
+            # eprint("login_url response text: " + str(login_url_response.text))
 
-        pattern_url_albums = re.compile(r'<a href="([^>]*albums_fotos.php[^>]*veure[^>]*)">')
+        numero_pagina=1
+        llistat_albums=[]
+        anterior_numero_albums=9999
 
-        current_list_albums = []
-        for album_url in re.findall(pattern_url_albums, str(index_url_response.text)):
+        # obtindre llistat tots els albums
+        while(anterior_numero_albums!=len(llistat_albums)):
+
+            anterior_numero_albums = len(llistat_albums)
+
+            # ?accio=llistar&pag=2&lloc=fotos
+            index_url_response = session.get(base_url+index_url+'?accio=llistar&pag='+str(numero_pagina)+'&lloc=fotos')
+
             if debug:
-                current_list_albums.append(album_url)
+                eprint("URL: "+base_url+index_url+'?accio=llistar&pag='+str(numero_pagina)+'&lloc=fotos')
+                eprint("index_url response code: " + str(index_url_response.status_code))
+                # eprint("index_url response text: " + str(index_url_response.text))
 
-        llistat_albums = llistat_albums + list(set(current_list_albums) - set(llistat_albums))
-        numero_pagina=numero_pagina+1
+            pattern_url_albums = re.compile(r'<a href="([^>]*albums_fotos.php[^>]*veure[^>]*)">')
 
-        if once:
-            break
+            current_list_albums = []
+            for album_url in re.findall(pattern_url_albums, str(index_url_response.text)):
+                if debug:
+                    current_list_albums.append(album_url)
 
-    # albums_fotos.php?accio=veure&id=1434
-    pattern_get_id_albums = re.compile(r'id=([0-9]*)')
+            llistat_albums = llistat_albums + list(set(current_list_albums) - set(llistat_albums))
+            numero_pagina=numero_pagina+1
 
-    for album_url in llistat_albums:
-        album_id = re.findall(pattern_get_id_albums, album_url)[0]
-        getAlbum(session, base_url, album_id)
+            if once:
+                break
 
-        # keepalive
-        index_url_response = session.get(base_url+index_url+'?accio=llistar&pag=1&lloc=fotos')
+        # albums_fotos.php?accio=veure&id=1434
+        pattern_get_id_albums = re.compile(r'id=([0-9]*)')
+
+        for album_url in llistat_albums:
+            album_id = re.findall(pattern_get_id_albums, album_url)[0]
+            getAlbum(session, base_url, album_id)
+
+            # keepalive
+            index_url_response = session.get(base_url+index_url+'?accio=llistar&pag=1&lloc=fotos')
