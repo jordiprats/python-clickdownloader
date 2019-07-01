@@ -29,7 +29,7 @@ def download_file_by_url(local_filename, url):
             for chunk in r.iter_content(chunk_size=8192):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
-                    # f.flush()
+            f.flush()
     return local_filename
 
 def getAlbum(session, base_url, album_id):
