@@ -29,7 +29,7 @@ def download_file_by_url(local_filename, url):
     return local_filename
 
 def getAlbum(session, base_url, album_id):
-    global debug, base_downloads
+    global debug, base_downloads, list
     # /students/albums_fotos.php?accio=veure&id=1441
     album_response = session.get(base_url+'/students/albums_fotos.php?accio=veure&id='+album_id)
     if debug:
@@ -58,16 +58,45 @@ def getAlbum(session, base_url, album_id):
     # TODO: friendlier name
     filename = album_url_download.split('/')[-1]
 
+    if list:
+        if os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
+            print("ALREADY DOWNLOADED: "+ base_downloads+'/'+titol_album+'.zip')
+        else:
+            print("NEEDS TO BE DOWNLOADED: "+ base_downloads+'/'+titol_album+'.zip')
     # actual download
-    if album_url_download and not os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
+    elif album_url_download and not os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
         download_file_by_url(base_downloads+'/'+titol_album+'.zip', album_url_download)
+
+def showJelp(msg):
+    print("Usage:")
+    print("   [-c|--config] <config file>")
+    print("   [-l|--list]")
+    print("");
+    sys.exit(msg)
 
 if __name__ == '__main__':
 
-    try:
-        config_file = sys.argv[1]
-    except IndexError:
-        config_file = './clickdownloader.config'
+list = False
+config_file = './clickdownloader.config'
+
+# parse opts
+try:
+    options, remainder = getopt.getopt(sys.argv[1:], 'hlc:', [
+                                                                'help'
+                                                                'list',
+                                                                'config=',
+                                                             ])
+except Exception, e:
+    showJelp(str(e))
+
+
+for opt, arg in options:
+    if opt in ('-l', '--list'):
+        list = True
+    elif opt in ('-c', '--config'):
+        config_file = arg
+    else:
+        showJelp("unknow option")
 
     config = SafeConfigParser()
     config.read(config_file)
