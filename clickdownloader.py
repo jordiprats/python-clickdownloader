@@ -19,6 +19,9 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 def download_file_by_url(local_filename, url):
+    global debug
+    if debug:
+        eprint("DOWNLOADING: "+url+" into "+local_filename)
     # NOTE the stream=True parameter below
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
