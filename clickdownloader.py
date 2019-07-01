@@ -59,17 +59,20 @@ def getAlbum(session, base_url, album_id):
     if debug:
         eprint("nom album: "+titol_album +" URL DOWNLOAD: "+album_url_download)
 
-    # TODO: friendlier name
     filename = album_url_download.split('/')[-1]
+    local_filename = base_downloads+'/'+titol_album+' - '+filename
 
     if list_option:
-        if os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
-            print("ALREADY DOWNLOADED: "+ base_downloads+'/'+titol_album+'.zip')
+        if os.path.isfile(local_filename):
+            print("ALREADY DOWNLOADED: "+local_filename)
         else:
-            print("NEEDS TO BE DOWNLOADED: "+ base_downloads+'/'+titol_album+'.zip')
+            if album_url_download:
+                print("NEEDS TO BE DOWNLOADED: "+local_filename+" URL: "+album_url_download)
+            else:
+                print("album \""+titol_album+"\" is NOT AVAILABLE")
     # actual download
-    elif album_url_download and not os.path.isfile(base_downloads+'/'+titol_album+'.zip'):
-        download_file_by_url(base_downloads+'/'+titol_album+'.zip', album_url_download)
+    elif album_url_download and not os.path.isfile(local_filename):
+        download_file_by_url(local_filename, album_url_download)
 
 def showJelp(msg):
     print("Usage:")
@@ -80,26 +83,31 @@ def showJelp(msg):
 
 if __name__ == '__main__':
     list_option = False
+    once = False
     config_file = './clickdownloader.config'
 
     # parse opts
     try:
-        options, remainder = getopt.getopt(sys.argv[1:], 'hlc:', [
+        options, remainder = getopt.getopt(sys.argv[1:], 'ohlc:', [
+                                                                    'once'
                                                                     'help'
                                                                     'list',
-                                                                    'config=',
+                                                                    'config='
                                                                  ])
     except Exception as e:
         showJelp(str(e))
 
-
     for opt, arg in options:
         if opt in ('-l', '--list'):
             list_option = True
+        elif opt in ('-o', '--once'):
+            once = True
+            if debug:
+                eprint("commandline once: "+str(once))
         elif opt in ('-c', '--config'):
             config_file = arg
         else:
-            showJelp("unknow option")
+            showJelp("unknow option: "+opt)
 
         config = SafeConfigParser()
         config.read(config_file)
@@ -134,10 +142,13 @@ if __name__ == '__main__':
         except:
             debug = False
 
-        try:
-            once = config.getboolean('clickdownloader', 'once')
-        except:
-            once = False
+        if not once:
+            try:
+                once = config.getboolean('clickdownloader', 'once')
+                if debug:
+                    eprint("config once: "+str(once))
+            except:
+                pass
 
         try:
             base_downloads = config.get('clickdownloader', 'basedownloads')
@@ -148,6 +159,9 @@ if __name__ == '__main__':
                         'username': username,
                         'password': password
         }
+
+        if debug:
+            eprint("final once: "+str(once))
 
         session = requests.Session()
         login_url_response = session.post(base_url+login_url, data=data_login)
@@ -177,7 +191,7 @@ if __name__ == '__main__':
 
             current_list_albums = []
             for album_url in re.findall(pattern_url_albums, str(index_url_response.text)):
-                if debug:
+                if not album_url in current_list_albums:
                     current_list_albums.append(album_url)
 
             llistat_albums = llistat_albums + list(set(current_list_albums) - set(llistat_albums))
